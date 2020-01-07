@@ -1,0 +1,778 @@
+.\" .UC 4
+.TH "SNIPL" "8" "April 14 2016" "" ""
+.SH "NAME"
+snipl \- remotely controlling virtual IBM Z hardware
+
+.SH "SYNOPSIS FOR LPAR MODE"
+\fBsnipl\fR \fI<image>\fR ... \fIACCESSDATA \fR{\fB\-a \fR[\fB\-\-profilename\fR] [\fB\-F\fR] | \fB\-d \fR[\fB\-F\fR] | \fB\-r\fR [\fB\-F\fR] | \fB-o\fR | \fB-g\fR}
+
+\fBsnipl\fR \fI<image>\fR ... \fIACCESSDATA \fB\-l \fILOADPARAMETERS\fR [\fB\-F\fR]\fR
+
+\fBsnipl\fR \fI<image>\fR ... \fIACCESSDATA \fB{\-s|\-D} \fISCSIPARAMETERS\fR [\fB\-F\fR]
+
+\fBsnipl\fR \fI<image>\fR \fIACCESSDATA \fB\-i \fR[\fB\-\-msgtimeout\fI <interval>\fR] [\fB\-M\fI <name>\fR]
+
+\fBsnipl \fR[\fI<image>\fR] \fIACCESSDATA \fB\-x\fR
+
+.SH "SYNOPSIS FOR z/VM MODE"
+\fBsnipl\fR \fI<guest> \fR... \fB \-V \fI<ipaddr>\fR [\fB\-z \fI<port>\fR] \fB\-u \fI<user>\fR {\fB\-p \fI<pw> \fR| \fB\-P\fR} [\fB\-e\fR] [\fB\-f \fI<file>\fR] [\fB\-\-timeout \fI<period>\fR] {\fB\-a\fR | \fB\-d \fR[\fB\-F|-X\fR \fI<period>\fR] | \fB\-r\fR | \fB\-g\fR | \fB\-x\fR}
+
+.SH "DESCRIPTION"
+\fBsnipl\fR is a command line tool for remotely controlling virtual IBM Z
+hardware. In particular, you can use \fBsnipl\fR to activate and deactivate
+virtual IBM Z hardware running Linux instances. You can set up a Linux
+instance on an IBM Z system or on a different hardware platform for
+running \fBsnipl\fR.
+
+\fBsnipl\fR helps you to automate tasks that are typically performed by human
+operators, for example, through the graphical interfaces of the SE or
+HMC. Automation is required, for example, for failover setups within
+Linux clusters.
+
+\fBsnipl\fR can run in one of two modes:
+
+.RS
+LPAR mode provides basic IBM Z support element (SE) functions for
+LPARs. The Linux instance where \fBsnipl\fR runs requires access to
+all SEs that control the LPARs you want to work with.
+
+z/VM mode provides basic z/VM systems management functions for z/VM guest
+virtual machines. The Linux instance where \fBsnipl\fR runs requires
+access to the systems management API of all z/VM systems that
+host z/VM guest virtual machines you want to work with.
+See section "OPTIONS FOR z/VM MODE" for details about \fBsnipl\fR in z/VM mode.
+.RE
+
+\fBATTENTION\fR: As of \fBsnipl\fR version 3.0.0, the default behavior
+changed: The default password was removed and encryption is enabled by
+default. To disable encryption, use the \fB-e\fR parameter.
+
+\fBWARNING\fR: Careless use of \fBsnipl\fR can result in unplanned
+downtime and loss of data.
+
+.SH "GENERAL OPTIONS FOR LPAR MODE"
+.TP
+\fI<image>\fR
+specifies an LPAR. If \fBsnipl\fR directly accesses the SE, this is the
+LPAR name as defined in the hardware setup. If \fBsnipl\fR accesses the SE
+through an HMC, the specification has the format
+\fI<system>-<lpar_name>\fR where \fI<system>\fR is the name
+that identifies the IBM Z system on the HMC.
+
+SE Example: lpar204
+.br
+HMC Example: z02-lpar204
+
+A \fBsnipl\fR command applies to one or more LPARs that are controlled by
+the same SE or HMC. If multiple LPARs are specified, it is assumed
+that all LPARs are controlled by the same SE or HMC as the first
+LPAR. Other LPARs are ignored.
+
+If multiple LPARs are specified along with at least one parameter specifying
+a load or dump device, the -F (--force) parameter must be used to confirm
+the operation.
+.TP
+\fB\-a\fR or \fB\-\-activate\fR
+activates the specified LPARs.
+.TP
+\fB\-\-profilename\fI <filename>\fR
+specifies an activation profile. If this parameter is omitted, the SE or an HMC default
+profile for the specified LPAR is used.
+.TP
+\fB\-d\fR or \fB\-\-deactivate\fR
+deactivates the specified LPARs.
+.TP
+\fB\-r\fR or \fB\-\-reset\fR
+resets the specified LPARs.
+.TP
+\fB\-o\fR or \fB\-\-stop\fR
+stops all CPUs for the specified LPARs.
+.TP
+\fB\-g\fR or \fB\-\-getstatus\fR
+returns the status for the specified LPARs.
+.TP
+\fB\-F\fR or \fB\-\-force\fR
+unconditionally forces the operation.
+.TP
+\fB\-i \fRor\fB \-\-dialog\fR
+starts an emulation of the SE or HMC Operating System Message applet for
+the specified LPAR.
+.TP
+\fB\-\-msgtimeout\fI <interval>\fR
+specifies the timeout for retrieving operating system messages in
+milliseconds. The default value is 5000 ms.
+.TP
+\fB\-M \fI<name>\fR or \fB\-\-msgfilename\fI <name>\fR
+specifies a file to which the operating system messages are written
+in addition to stdout. If no file is specified, the operating system
+messages are written to stdout only.
+.TP
+\fB\-x\fR or \fB\-\-listimages\fR
+retrieves a list of all LPARs from the specified SE or HMC. If an HMC
+is specified, all LPARs for all managed systems are listed.
+.TP
+\fB\-l\fR
+see section "LOADPARAMETERS".
+.TP
+\fB\-s\fR and \fB\-D\fR
+see section "SCSIPARAMETERS".
+.TP
+\fB\-v \fRor \fB\-\-version\fR
+displays the version of \fBsnipl\fR and exits.
+.TP
+\fB\-h \fRor \fB\-\-help\fR
+displays a short usage description and exits.
+
+.SH "ACCESSDATA"
+.TP
+\fB\-L \fI<ipaddr>\fR or \fB\-\-lparserver \fI<ipaddr>\fR
+specifies the IP address (IPv4 or IPv6) or host name of the SE or HMC
+that controls the LPAR or LPARs you want to work with. This parameter
+can be omitted if specified through a configuration file. You must
+specify it for the \fB\-x (\-\-listimages)\fR operation.
+.TP
+\fB\-p \fI<community>\fR or \fB\-\-password \fI<community>\fR
+specifies the password in the SNMP configuration settings on the SE
+that controls the LPAR or LPARs you want to work with. This parameter
+can also be specified through a configuration file. When encryption is
+enabled, the \fBpassword\fR parameter specifies the password for the
+SNMPv3 username from the \fB\-u (\-\-userid)\fR command line parameter
+or \fBuser\fR keyword value in the snipl configuration file.
+.TP
+\fB\-P\fR or \fB\-\-promptpassword\fR
+prompts for a password in protected entry mode.
+.TP
+\fB\-u \fI<user> \fRor \fB\-\-userid \fI<user>\fR
+specifies an SNMPv3 user identifier that is authorized to access an
+HMC or SE. This parameter can be omitted if defined in the snipl
+configuration file.
+.TP
+\fB\-e \fRor \fB\-\-noencryption\fR
+specifies that no encryption is used when connecting to the HMC or SE.
+.TP
+\fB\-f \fI<filename>\fR or \fB\-\-configfilename \fI<filename>\fR
+specifies the name of a configuration file that maps LPARs to the
+corresponding specifications for the SE or HMC address and password
+(community).
+
+If no configuration file is specified, the user-specific default file
+~/.snipl.conf is used. If this file does not exist, the system
+default file /etc/snipl.conf is used.
+
+Be sure that the command line parameters you provide uniquely
+identify the configuration-file section you want to work with. If you
+specify multiple LPARs on the command line, only the first
+specification is used to identify the section. If your specifications
+map to multiple sections, the first match is processed.
+
+If conflicting specifications are provided through the command line
+and the configuration file, the command line specification is used.
+
+If a configuration file is neither specified nor available at the
+default locations, all required parameters must be specified on the
+command line.
+
+See section "STRUCTURE OF THE CONFIGURATION FILE" for more information about
+the configuration file.
+.TP
+\fB\-\-timeout\fR \fI<period>\fR
+specifies the timeout in milliseconds for general management API
+calls. The default is 60000 ms.
+
+.SH "LOADPARAMETERS"
+.TP
+\fB\-l\fR or \fB\-\-load\fR
+performs an IPL for the specified LPARs.
+.TP
+\fB\-A \fRor\fB \-\-address_load\fR \fI<address>\fR
+specifies the hexadecimal four-digit device number of the IPL device optionally
+prefixed with the subchannel set id of the device. The default is subchannel set 0.
+If this parameter is omitted, the IPL device of the most recent IPL
+of the LPAR is used.
+.TP
+\fB\-\-parameters_load\fR \fI<string>\fR
+specifies a parameter string for IPL.
+If this parameter is omitted, the string of the most recent IPL of the LPAR
+is used.
+.TP
+\fB\-\-load_timeout\fR \fI<timeout>\fR
+specifies the maximum time for load completion in seconds. The timeout must be
+between 60 and 600 seconds. The default timeout is 60 seconds.
+
+If the timeout expires, control is returned without an indication
+about the success of the IPL operation.
+.TP
+\fB\-\-noclear\fR
+prevents the memory from being cleared before loading.
+.TP
+\fB\-\-storestatus\fR
+stores status before performing the IPL. This option implies
+\fB\-\-noclear\fR and also prevents the main memory from being cleared before
+loading.
+
+.SH "SCSIPARAMETERS"
+.TP
+\fB\-s \fRor\fB \-\-scsiload\fR
+performs an IPL from a SCSI device for the specified LPARs.
+.TP
+\fB\-D \fRor\fB \-\-scsidump\fR
+performs a dump for the specified LPAR to a SCSI device.
+.TP
+\fB\-A \fRor\fB \-\-address_load\fR \fI<address>\fR
+specifies the hexadecimal four-digit device number of the IPL device optionally
+prefixed with the subchannel set id of the device. The default is subchannel set 0.
+If this parameter is omitted, the IPL device of the most recent IPL
+of the LPAR is used.
+.TP
+\fB\-\-parameters_load\fR \fI<string>\fR
+specifies a parameter string for IPL.
+If this parameter is omitted, the string of the most recent IPL of the LPAR
+is used.
+.TP
+\fB\-\-wwpn_scsiload\fR \fI<portname>\fR
+specifies the worldwide port name (WWPN) for the SCSI IPL device. If fewer than 16 characters
+are specified, the WWPN is padded with zeroes at the end.
+If this parameter is omitted, the WWPN of the most recent SCSI IPL
+of the LPAR is used.
+.TP
+\fB\-\-lun_scsiload\fR \fI<unitnumber>\fR
+specifies the logical unit number (LUN) for the SCSI IPL device.
+If fewer than 16 characters are specified, the LUN is padded with zeroes at the end.
+If this parameter is omitted, the LUN of the most recent SCSI IPL of the LPAR is used.
+.TP
+\fB\-\-bps_scsiload\fR \fI<selector>\fR
+specifies the boot program required for the SCSI IPL device. Selector values range from 0 to 30.
+If this parameter is omitted, the boot program of the most recent SCSI IPL of the LPAR is used.
+.TP
+\fB\-\-ossparms_scsiload\fR \fI<ossparm>\fR
+specifies an operating system-specific parameter string for IPL from a SCSI device.
+If this parameter is omitted, the string of the most recent SCSI IPL of the LPAR is used.
+This parameter string is ignored by the boot program and passed to the operating program
+or dump program to be loaded. For example, you can specify additional kernel parameters for Linux.
+.TP
+\fB\-\-bootrecord_scsiload\fR \fI<address>\fR
+specifies the boot record logical block address for the SCSI IPL device.
+If fewer than 16 characters are specified, the address is padded with zeroes at the end.
+If this parameter is omitted, the address of the most recent SCSI IPL of the LPAR is used.
+
+.SH "OPTIONS FOR z/VM MODE"
+.TP
+\fI<guest>\fR
+specifies the z/VM guest virtual machine you want to work with.
+
+Specify multiple z/VM user IDs to perform the same action for
+multiple z/VM guest virtual machines.
+
+You can omit this parameter for the \fB\-x\fR option if other specifications
+on the command line identify a section in the configuration file.
+.TP
+\fB\-V \fI<ipaddr>\fR or \fB\-\-vmserver \fI<ipaddr>\fR
+specifies the IP address (IPv4 or IPv6) or host name of the SMAPI
+request server or VSMSERVE service machine through which the
+specified z/VM guest virtual machines are controlled. This parameter
+can be omitted if defined in the configuration file.
+.TP
+\fB\-z \fI<port> \fRor \fB\-\-port \fI<port>\fR
+specifies the port on which the SMAPI request server listens.
+
+This parameter does not apply to setups that use the VSMSERVE service machine to access
+the systems management API.
+
+For setups that use a SMAPI request server this parameter is required
+unless it is defined in the configuration file.
+.TP
+\fB\-u \fI<user> \fRor \fB\-\-userid \fI<user>\fR
+specifies a z/VM user ID that is authorized to access the SMAPI
+request server or VSMSERVE service machine. This parameter can be
+omitted if defined in the configuration file.
+.TP
+\fB\-p \fI<pw> \fRor \fB\-\-password \fI<pw>\fR
+specifies the password for the z/VM user ID specified with \fB\-\-userid\fR.
+This parameter can be omitted if defined in the configuration file.
+.TP
+\fB\-P \fRor \fB\-\-promptpassword\fR
+prompts for a password in protected entry mode.
+.TP
+\fB\-e \fRor \fB\-\-noencryption\fR
+specifies that no encryption is used when connecting to the SMAPI request
+server.
+.TP
+\fB\-f \fI<file> \fRor \fB\-\-configfilename \fI<file>\fR
+specifies the name of a configuration file that maps z/VM guest
+virtual machines to the corresponding specifications for the SMAPI
+request server or VSMSERVE service machine, the authorized z/VM user
+ID, password, and the port (if applicable).
+
+If no configuration file is specified, the user-specific default file
+~/.snipl.conf is used. If this file does not exist, the system
+default file /etc/snipl.conf is used.
+
+Be sure that the command line parameters you provide uniquely
+identify the configuration-file section you want to work with. If you
+specify multiple z/VM guest virtual machines on the command line,
+only the first specification is used to identify the section. If your
+specifications map to multiple sections, the first match is
+processed.
+
+If conflicting specifications are provided through the command line
+and the configuration file, the command line specification is used.
+If no configuration file is used, all required parameters must be
+specified on the command line.
+
+See section "STRUCTURE OF THE CONFIGURATION FILE" for more information about
+the configuration file.
+.TP
+\fB\-\-timeout \fI<period>\fR
+Specifies the timeout in milliseconds for general management API
+calls. The default is 60000 ms.
+.TP
+\fB\-a \fRor \fB\-\-activate\fR
+logs on the specified z/VM guest virtual machines.
+.TP
+\fB\-d \fRor \fB\-\-deactivate\fR
+logs off the specified z/VM guest virtual machines.
+.TP
+\fB\-F \fRor \fB\-\-force\fR
+immediately issues CP FORCE commands to log off the specified z/VM guest virtual machines.
+This parameter is equivalent to -X 0.
+.TP
+\fb\-X \fI<maxperiod>\fR or \fB\-\-shutdowntime\fI <maxperiod>
+Specifies the maximum period, in seconds, granted for graceful completion
+before CP FORCE commands are issued against the z/VM guest virtual machines.
+By default, the maximum period is 300s.
+.TP
+\fB\-r \fRor \fB\-\-reset\fR
+logs off the specified z/VM guest virtual machines and then logs them
+back on.
+.TP
+\fB\-g \fRor \fB\-\-getstatus\fR
+returns the status for the specified z/VM guest virtual machines.
+.TP
+\fB\-x \fRor \fB\-\-listimages\fR
+lists the z/VM guest virtual machines as specified in a
+configuration-file section (see section "STRUCTURE OF THE CONFIGURATION FILE").
+You can identify the configuration file section with the \fB\-V\fR
+parameter, by specifying a z/VM guest virtual machine, or by
+specifying a z/VM guest virtual machine and the \fB\-u\fR parameter.
+.TP
+\fB\-v \fRor \fB\-\-version\fR
+displays the version of \fBsnipl\fR and exits.
+.TP
+\fB\-h \fRor \fB\-\-help\fR
+displays a short usage description and exits.
+
+.SH "STRUCTURE OF THE CONFIGURATION FILE"
+Any required parameters that are not provided on the command line must be specified
+through the configuration file. Specifications on the command line override specifications in the configuration file.
+
+A \fBsnipl\fR configuration file contains one or more sections. Each section
+consists of multiple lines with specifications of the form
+\fI<keyword>=<value>\fR for either a z/VM system or an SE.
+
+The following rules apply to the configuration file:
+.IP o 5
+Lines that begin with a number sign (#) are comment lines. A number sign in the middle of a line makes
+the remaining line a comment.
+.IP o 5
+Empty lines are permitted.
+.IP o 5
+The specifications are not case sensitive.
+.IP o 5
+The same configuration file can contain sections for \fBsnipl\fR in both LPAR mode and z/VM mode.
+.IP o 5
+In a \fI<keyword>=<value>\fR pair, one or more blanks are allowed before or after the equal sign (=).
+.RE
+
+
+The following list maps the configuration file keywords to command line equivalents:
+.TP
+\fBserver\fR (required)
+Starts a configuration file section by specifying the IP address of
+an SE or HMC (LPAR mode), or a SMAPI request server or VSMSERVE service machine (z/VM mode).
+
+The \fBserver\fR and \fBtype\fR keywords jointly correspond to the command line option \fB\-L\fR (LPAR mode)
+or \fB\-V\fR (z/VM mode).
+
+.TP
+\fBtype\fR (required)
+specifies the mode, "LPAR" or "VM".
+
+.TP
+\fBuser\fR (z/VM and LPAR with SNMPv3)
+specifies a z/VM or SNMPv3 user identifier that is authorized for the HMC or
+SE, SMAPI request server or the VSMSERVE service machine.
+
+This keyword corresponds to the \fB\-u\fR or \fB\-\-user\fR command line option.
+
+The user ID can be omitted and specified on the command line instead.
+
+.TP
+\fBpassword\fR
+.br
+.RS
+For LPAR mode:
+.RS
+specifies the value for community in the SNMPv2 (unencrypted) settings of the
+HMC or SE or the value for password in the SNMPv3 (encrypted) settings of the
+HMC or SE.
+
+.RE
+For z/VM mode:
+.RS
+specifies the password for the z/VM user ID specified with the \fBuser\fR keyword.
+
+.RE
+.br
+This keyword corresponds to the \fB\-p\fR or \fB\-\-password\fR command line option.
+
+The password can be omitted and specified on the command line instead.
+Do not include passwords in the \fBsnipl\fR configuration file unless the security
+policy at your installation permits you to do so.
+.RE
+.TP
+\fBencryption\fR (yes, no)
+.br
+.RS
+For LPAR mode:
+.RS
+"yes" specifies an SNMPv3 encrypted connection.
+.RE
+.RS
+"no" specifies an SNMPv2 unencrypted connection.
+.RE
+For z/VM mode:
+.RS
+"yes" specifies an OpenSSL-protocol encrypted connection to the SMAPI request server.
+.RE
+.RS
+"no" specifies unencrypted connection to the SMAPI request server.
+.RE
+.RE
+\fBsslfingerprint\fR
+.br
+.RS
+For LPAR mode:
+.RS
+will be ignored
+.RE
+For z/VM mode:
+.RS
+if encryption is enabled, the fingerprint mechanism is used to detect
+man-in-the-middle attacks. Specified in the configuration file, the
+fingerprint value must be equal to the server certificate fingerprint
+for each new \fBsnipl\fR connection. The \fBsslfingerprint\fR parameter
+can be specified in the configuration file only.
+.RE
+.RE
+.br
+\fBport\fR (z/VM mode only)
+.br
+.RS
+specifies the port on which the SMAPI request server listens.
+
+The port specification is required if the server keyword specifies the IP address or host name of a SMAPI
+request server. The \fBport\fR keyword can be omitted if the port is specified on the command line instead.
+
+This keyword corresponds to the \fB\-z\fR or \fB\-\-port\fR command line option.
+.RE
+.TP
+\fBimage\fR (one or more required for each section)
+.br
+.RS
+For LPAR mode:
+.RS
+specifies an LPAR name as defined in the IBM Z hardware configuration.
+
+If the \fBserver\fR keyword specifies an HMC, the specification begins with the
+name that identifies the IBM Z system on the HMC, followed by a
+hyphen (\-), followed by the LPAR name.
+
+.RE
+For z/VM mode:
+.RS
+specifies a z/VM user ID that identifies a z/VM guest virtual machine.
+
+.RE
+You can define an alias name for the LPAR or z/VM user ID by appending a forward
+slash (/) to the ID and specifying the alias following the slash.
+.RE
+.RE
+.br
+
+
+Sample configuration file:
+.br
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.br
+# z/VM system for Linux training sessions
+.br
+       Server = sandbox.www.example.com
+.br
+       type = VM
+.br
+       password = pw42play
+.br
+       encryption = yes
+.br
+       sslfingerprint = a2:ea:81:ed:e9: ... 84:cf:87:98:fe:38:54:c7
+.br
+       port = 44444
+.br
+       user = sndadm01
+.br
+       image = sndlnx01
+.br
+       image = sndlnx02
+.br
+       image = sndlnx03/tutor
+
+.br
+# z/VM system for testing
+.br
+       Server = fd31:207b:30ee:7e57::9
+.br
+       type = VM
+.br
+       port = 44446
+.br
+       encryption = no
+.br
+       user = vmadmin
+.br
+       password = admpw
+.br
+       image = vmlnx07
+.br
+       image = vmlnx09
+.br
+
+# SE for production SZ01
+.br
+       Server=192.0.2.4
+.br
+       type=LPAR
+.br
+       encryption = yes
+.br
+       user = sz01adm
+.br
+       image=SZ01LP00
+.br
+       image=SZ01LP01
+.br
+       image=SZ01LP02
+
+.br
+# HMC for SZ03 - SZ05
+.br
+       server = 192.0.2.10
+.br
+       type = LPAR
+.br
+       encryption = no
+.br
+       image = SZ03-SZ03LP00
+.br
+       image = SZ03-SZ03LP01
+.br
+       image = SZ04-SZ04LP01
+.br
+       image = SZ05-SZ05LP02
+.br
+
+.br
+# HMC for SZ06 - SZ09
+.br
+       server = fd31:207b:30ee:7e57::6b9
+.br
+       type = LPAR
+.br
+       encryption = no
+.br
+       image = SZ06-SZ06LP01
+.br
+       image = SZ07-SZ07LP03
+.br
+       image = SZ08-SZ08LP00
+.br
+       image = SZ09-SZ09LP09
+.br
+
+.br
+# Production VM 05 - uses VSMSERVE so no port
+.br
+       server = 192.0.2.20
+.br
+       type = VM
+.br
+       encryption = no
+.br
+       user = VM05MAIN
+.br
+       image = VM05G001
+.br
+       image = VM05G002
+.br
+
+<EOF>
+.br
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+
+
+.SH "RETURN CODES AND CONNECTION ERRORS"
+
+Successful \fBsnipl\fR commands return 0. If an error occurs, \fBsnipl\fR writes a
+short message to stderr and completes with a return code other than 0.
+
+The following return codes indicate \fBsnipl\fR syntax errors or
+specifications that are not valid:
+.IP 1 5
+An unknown command option has been specified.
+.IP 2 5
+A command option with an invalid value has been specified.
+.IP 3 5
+A command option has been specified more than once.
+.IP 4 5
+Conflicting command options have been specified.
+.IP 5 5
+No command option has been specified.
+.IP 6 5
+No SE, HMC, SMAPI request server or VSMSERVE service machine
+has been specified on the command line or through a
+configuration file.
+.IP 7 5
+No LPAR or z/VM guest virtual machine has been specified.
+.IP 8 5
+No z/VM user ID has been specified on the command line or
+through a configuration file.
+.IP 9 5
+No password has been specified on the command line or through a
+configuration file.
+.IP 10 5
+A specified LPAR does not exist on the specified SE.
+.IP 22 5
+More than one LPAR has been specified for option \fB\-\-dialog\fR.
+.IP 24 5
+No user name was specified in the command line or configuration file. User name
+is required when encryption is selected.
+.IP 25 5
+User name must not be specified when encryption is disabled.
+.RE
+
+
+The following return codes indicate setup errors or program errors:
+.IP 30 5
+An error occurred while loading one of the systems management API libraries libhwmcaapi.so or libvmsmapi.so.
+.IP 40 5
+Operation \fB\-\-dialog\fR encounters a problem while starting another process.
+.IP 41 5
+Operation \fB\-\-dialog\fR encounters a problem with stdin attribute setting.
+.IP 50 5
+A response from the SE or HMC could not be interpreted.
+.IP 60 5
+The response buffer is too small for a response from the SE or HMC.
+.IP 90 5
+A storage allocation failure occurred.
+.IP 99 5
+A program error occurred.
+.IP 100 5
+A connection error with a z/VM SMAPI-Server occurred.
+.RE
+
+If a connection error occurs (for example, a timeout), \fBsnipl\fR sends a
+message to stderr.
+
+To recover connection errors try again to issue the command. Should the
+problem persist, a networking failure is most likely. In this case,
+increase the timeout value.
+
+Error messages from the SE have the following format:
+
+\fI<LPAR_name>\fR: \fI<message>\fR - rc is \fI<rc>\fR
+
+where \fI<rc>\fR is a numeric return code from the network management
+application programming interfaces (HWMCAAPI) on the SE.
+
+Example:
+LPARLNX1: not acknowledged - command was not successful - rc is 135921664
+
+To interpret these return codes, see \fISystem z Application Programming Interfaces\fR,
+SB10-7030. You can obtain this publication
+from IBM Resource Link at www.ibm.com/servers/resourcelink.
+
+Error messages from the Systems Management Application Programming Interface
+(SMAPI) server have the following format:
+
+* Error during SMAPI server communication: return code \fI<rc>\fR, reason code \fI<rs>\fR
+
+where \fI<rc>\fR is a numeric return code and \fI<rs>\fR is a numeric reason
+code from the SMAPI.
+
+Example:
+* Error during SMAPI server communication: return code 24, reason code 813
+
+To interpret these return and reason codes, see \fIz/VM Systems Management Application Programming\fR,
+SC24-6234.
+
+.SH "EXAMPLES"
+
+To deactivate an LPAR SZ01LP02 with the force option:
+.br
+snipl SZ01LP02 \-L 192.0.2.4 \-u sz01adm \-P \-d \-F
+
+To deactivate an LPAR SZ09LP09:
+.br
+snipl SZ09LP09 \-L fd31:207b:30ee:7e57::9 \-e \-P \-d
+
+To perform an IPL from a CCW device with bus ID
+0.0.5119 for an LPAR SZ03LP00 on system SZ03:
+.br
+snipl SZ03\-SZ03LP00 \-L 192.0.2.4 \-e \-P \-l \-A 5119
+
+To perform an IPL from a CCW device in subchannel set 1 with the
+bus ID 0.1.5119 for an LPAR SZ03LP00:
+.br
+snipl SZ03LP00 \-L 192.0.2.4 \-e \-P \-l \-A 15119
+
+To perform a SCSI IPL for an LPAR SZ01LP00:
+.br
+snipl SZ01LP00 \-L 192.0.2.4 \-u sz01adm \-P \-s \-A 3d0f \-\-wwpn_scsiload 500507630303c562 \-\-lun_scsiload 4010404900000000
+
+To log on two z/VM guest virtual machines, vmlnx07 and vmlnx09:
+.br
+snipl vmlnx07 vmlnx09 \-V fd31:207b:30ee:7e57::9 \-z 44446 \-e \-u vmadmin \-p admpw \-a
+
+With a suitable configuration file at /etc/xcfg the previous command can be shortened to:
+.br
+snipl vmlnx07 vmlnx09 \-f /etc/scfg \-a
+
+With a suitable default configuration file the command can be further shortened to:
+.br
+snipl vmlnx07 vmlnx09 \-a
+
+.SH "AUTHOR"
+.nf
+This man page was written by
+Peter Tiedemann <ptiedem@de.ibm.com> and
+Ursula Braun <ursula.braun@de.ibm.com>.
+
+Copyright IBM Corp. 2002, 2016
+
+Published under the terms and conditions of the CPL
+(Common Public License).
+.fi
+
+.SH "SEE ALSO"
+\fIDevice Drivers, Features and Commands\fR, SC33-8411.
+
+For information about the management APIs of the Support Element and
+the Hardware Management Console, see
+\fISystem z Application Programming Interfaces\fR which is available
+at the IBM Resource Link site (http://www.ibm.com/servers/resourcelink).
+
+For information about the systems management APIs of z/VM see
+\fIz/VM Systems Management Programming\fR, SC24-6234 for connecting through
+a SMAPI request server or see
+\fIz/VM Systems Management Programming\fR, SC24-6122-02 or earlier, for RPC-based
+access through a VSMSERVE service machine. PDF versions of these documents are available from the z/VM
+website at http://www.ibm.com/vm.

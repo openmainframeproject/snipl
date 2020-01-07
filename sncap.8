@@ -1,0 +1,355 @@
+.\" .UC 4
+.TH "SNCAP" "8" "February 20 2016" "" ""
+.SH "NAME"
+sncap \- remote dynamic CPU capacity management
+
+.SH "SYNOPSIS"
+\fBsncap\fR \fICPCID\fR \fB-a\fR \fIRECID\fR [\fB-t\fR][\fB-n\fR][\fB-V\fR] \fIPROCINFO\fR \fI[ACCESSDATA]\fR
+
+\fBsncap\fR \fICPCID\fR \fB-d\fR \fIRECID\fR [\fB-n\fR][\fB-V\fR] \fI[PROCINFO]\fR \fI[ACCESSDATA]\fR
+
+\fBsncap\fR \fICPCID\fR \fB-q\fR \fIRECID\fR [\fB-V\fR] \fI[ACCESSDATA]\fR
+
+\fBsncap\fR \fICPCID\fR \fB-l\fR [\fB-V\fR] \fI[ACCESSDATA]\fR
+
+\fBscnap\fR \fICPCID\fR \fB-c\fR [\fB-V\fR] \fI[ACCESSDATA]\fR
+
+\fBsncap\fR \fB-x\fR [\fB-V\fR] \fIACCESSDATA\fR
+
+\fBsncap\fR [\fB-v\fR|\fB-h\fR]
+
+.SH "DESCRIPTION"
+Use the simple network capacity management (\fBsncap\fR) command to specify a temporary capacity record activation or deactivation and operation parameters for a CPC. This command can control the Capacity BackUp (CBU), Capacity for Planned Events (CPE) and On/Off Capacity On-Demand (OOCOD) temporary capacity records. \fBsncap\fR requires the Support Element (SE) or Hardware Management Console (HMC) software version 2.10.0 or later. The command can operate only with the records that are installed on the support element (SE).
+
+\fBsncap\fR uses the management application programming interfaces (APIs) provided by the SE or HMC (HWMCAAPI API servers). To communicate with the server, \fBsncap\fR establishes a network connection and uses the SNMP protocol to send and retrieve data by using HWMCAAPI API calls. The server must be configured to allow the initiating host system, the Linux system where \fBsncap\fR is run, to access the API.
+
+.SH "GENERAL OPTIONS"
+.TP
+\fICPCID\fR
+Central Processing Complex identifier specified in the SE network settings configuration. This parameter also identifies the configuration file section where the server connection parameters (see \fIACCESSDATA\fR) can be specified. The CPCID value can be found in the SE user interface in the "Identification" tab of the "Customize Network Settings" window or using \fBsncap\fR with the \fB-x\fR option. This parameter is mandatory for the activation, deactivation and query operations, and should be specified as command line argument.
+
+Example: CPC204
+.TP
+\fIRECID\fR
+The identifier of a temporary capacity record that is installed on the SE you want to work with.
+.TP
+\fB\-a\fR or \fB\-\-activate\fR
+Activates the temporary capacity record with the record identifier \fIRECID\fR and processor parameters \fIPROCINFO\fR.
+You must specify the \fIPROCINFO\fR parameters to activate the record.
+.TP
+\fB\-t\fR or \fB\-\-test\fR
+Activates the temporary capacity record in test mode for up to 10 days. Use test mode to activate the record for a short period the number of times that are specified in the record definition. Real activation is possible only while no test is active. This option can be used only together with the \fB-a\fR (\fB--activate\fR) option.
+.TP
+\fB\-d\fR or \fB\-\-deactivate\fR
+Deactivates the temporary capacity record with the record identifier \fIRECID\fR and processor parameters \fIPROCINFO\fR on the CPC \fICPCID\fR. If the \fIPROCINFO\fR data is specified, \fB-d\fR deactivates only the specified processors in the CPC configuration. If the \fIPROCINFO\fR parameters are not specified, \fB-d\fR deactivates the entire record.
+.TP
+\fB\-n\fR or \fB\-\-no_record_changes\fR
+Skips any actions that would change the records. This mode can be used for debugging purposes. When specified, \fBsncap\fR does not change the temporary capacity record state during the record activation or deactivation. It assumes that the activation or deactivation request is always performed successfully. The querying functions run as in the regular execution mode.
+.TP
+\fB\-x\fR or \fB\-\-list_cpcs\fR
+Sends the output of the list of CPCs that are defined on an SE or HMC to stdout. The list contains the CPC identifiers and its support element version numbers. When the \fB-x\fR option is specified, the \fB-S\fR specification of the server IP address or DNS name is required as part of the \fIACCESSDATA\fR.
+.TP
+\fB\-l\fR or \fB\-\-list_records\fR
+Displays the list of temporary capacity records that are installed on the specified CPC.
+A value of -1 in the Real Act. and Test Act. report fields means that there is an unlimited number of record activation attempts in the Real or Test mode. 
+.TP
+\fB\-q\fR or \fB\-\-query\fR
+Displays the detailed information about the temporary capacity record \fIRECID\fR, installed on the specified CPC, including the data for the available CPU capacity models defined in the record, and the current CPC processor capacity parameters. A value of -1 for the temporary capacity record  activation  parameters  means that there is an unlimited value. The negative value of PU or CLI in the Available Model Capacity Identifiers table designates the number of PU or CLI to be deactivated  to  achieve  the  listed model capacity. The asterisk '*' value of the maximum  quantity of CP type PUs means that all the PUs defined in the temporary capacity record can be activated as the CP type PUs.
+.TP
+\fB\-c\fR or \fB\-\-pu_configuration\fR
+Displays information about the current CPC processing unit configuration. The information includes the number of active processors, the processors available for temporary activation, model capacity identifier and current MSUs available on the CPC. A hyphen, '-', in the report fields means that the  value is not applicable for temporary or permanent configuration.
+.TP
+\fB\-h \fRor\fB \-\-help\fR
+Displays a short usage description and exits. To view the man page, issue \fBman sncap\fR.
+.TP
+\fB\-v \fRor \fB\-\-version\fR
+Displays the version of \fBsncap\fR and exits.
+.TP
+\fB\-V\fR or \fB\-\-verbose\fR
+Specifies the verbose mode.
+
+.SH "PROCINFO"
+Specifies the processor types and quantities to be activated or deactivated on the CPC \fICPCID\fR to change the record activation level. The temporary capacity record activation operation requires the PROCINFO parameters. The PROCINFO parameters can be omitted for the record deactivation. If no specific processor type is specified, all the processors from the temporary capacity record are deactivated in the CPC. The model capacity identifier is set to the minimal available model capacity value. Each processor type can be specified only once. If more processors are specified for activation or deactivation than are defined in record, the command returns with return code 17. No processors are activated or deactivated.
+.TP
+\fB\-\-zaap \fI<n>\fR
+Specifies the number (n) of ZAAP processors in the \fIPROCINFO\fR parameters to be activated or deactivated.
+.TP
+\fB\-\-ziip \fI<n>\fR
+Specifies the number (n) of ZIIP processors in the \fIPROCINFO\fR parameters to be activated or deactivated.
+.TP
+\fB\-\-icf \fI<n>\fR
+Specifies the number (n) of ICF processors in the \fIPROCINFO\fR parameters to be activated or deactivated.
+.TP
+\fB\-\-ifl \fI<n>\fR
+Specifies the number (n) of IFL processors in the \fIPROCINFO\fR parameters to be activated or deactivated.
+.TP
+\fB\-\-sap \fI<n>\fR
+Specifies the number (n) of SAP processors in the \fIPROCINFO\fR parameters to be activated or deactivated.
+.TP
+\fB\-m \fI<id>\fR or \fB--model_capacity \fI<id>\fR
+Specifies the model capacity identifier <id> to be activated by the command. The model capacity identifiers are supplied in the temporary capacity record. They can be found either using the support element user interface, or the \fB--query\fR \fI<RECID>\fR function of the \fBsncap\fR application. Use the model capacity identifier to control the number of CP processors and the Capacity Level Indicator value to be activated or deactivated to achieve the target CPU capacity model. Also, the model capacity identifier influenced the Target MSU Value and MSU Cost parameters. If the \fB-m\fR parameter is specified without the processor types and quantities, it activates or deactivates only the specified capacity model. It then leaves the active auxiliary processor quantities unchanged.
+
+.SH "ACCESSDATA"
+.TP
+\fB\-S \fI<ip_address>\fR \fB\-\-se \fI<ip_address>\fR
+Specifies the IP address or DNS name for the SE or HMC that controls the CPC you want to work with. You can omit this parameter if the SE or HMC IP address or DNS name and community are specified in the sncap configuration file. The IP address of SE or HMC is identified in the configuration file using the \fIcpcid\fR attribute.
+.TP
+\fB\-p \fI<password>\fR or \fB\-\-password \fI<password>\fR
+Specifies the password (community) from the SNMP configuration settings on the SE or HMC that controls the CPC you want to work with. This parameter is required, and must be specified either in the command line or in the configuration file. Alternatively, use the -P option to prompt the user for the password. When
+encryption is enabled, the \fIpassword\fR command line parameter specifies the
+password for the SNMPv3 username from the \fB\-u (\-\-userid)\fR command
+line parameter or \fBuser\fR keyword value in the \fBsncap\fR configuration
+file.
+.TP
+\fB\-P\fR or \fB\-\-promptpassword\fR
+Prompts for a password (community) in protected entry mode.
+.TP
+\fB\-u \fI<username>\fR or \fB\-\-userid \fI<username>\fR
+Specifies the user name from the SNMP configuration settings of an SE or HMC
+that controls the CPC you want to work with. This parameter is required if
+encryption is active, and could be specified either in the command line or in
+the configuration file.
+.TP
+\fB\-e or \fB\-\-noencryption
+Disables SE or HMC connection encryption. User name is not needed if encryption
+is disabled. By default, connection encryption is enabled.
+.TP
+\fB\-f \fI<filename>\fR or \fB\-\-configfilename \fI<filename>\fR
+Specifies the name of the sncap configuration file that maps CPC identifiers to the corresponding specifications for the SE or HMC addresses and passwords. If no configuration file is specified, the user-specific default file ~/.snipl.conf is used. If this file does not exist, the system default file /etc/snipl.conf is used.
+
+A connection to server requires specification of the \fICPCID\fR, the SE or HMC IP address or DNS name, and the password (community). If only the \fICPCID\fR parameter is specified on the command line, it identifies the section of the configuration file which contains the \fIACCESSDATA\fR values. If the \fICPCID\fR and the server IP address are specified, \fBsncap\fR looks for the password in the configuration file using the server IP address for the configuration file section identification. If your specification maps to multiple sections, the first match is processed. If conflicting specifications of \fIACCESSDATA\fR are provided through the command line and the configuration file, the command line specification is used. If a configuration file is neither specified nor available at the default locations, all required parameters must be specified on the command line.
+.TP
+\fB\-\-timeout \fI<timeout>\fR
+Specifies the timeout in milliseconds for general management API calls. The default is 60000 ms.
+
+.SH "STRUCTURE OF THE CONFIGURATION FILE"
+Any required connection parameters that are not provided on the command line must be specified through the configuration file. The command line specifications override specifications in the configuration file. The \fBsncap\fR command uses the CPC identifier to select the configuration file sections to retrieve the relevant connection parameters. You must specify the CPC identifier on the command line for all \fBsncap\fR operations except the -x option. The -x option is used to retrieve the CPC identifier list defined on a server.
+
+The structure of the \fBsncap\fR configuration file is similar to the \fIsnipl\fR configuration file structure. You can use the \fIsnipl\fR configuration file with \fBsncap\fR if you add the CPC identifiers to the \fIsnipl\fR server definition sections by using the \fIcpcid\fR keyword. The \fIcpcid\fR keywords can be added only to the support element HWMCAAPI API server definitions (LPAR type sections). They cannot be added to the configuration file sections of the VM type because these sections define connections to z/VM systems in the \fIsnipl\fR configuration file and \fBsncap\fR can only connect to SEs or HMCs.
+
+An \fBsncap\fR configuration file contains one or more sections. Each section consists of multiple lines with specifications of the form  <keyword>=<value> for an SE or HMC. The  \fBsncap\fR command identifies the sections by using the CPC identifier. To retrieve the connection parameters from the configuration file, at least the CPC identifier must be specified on the command line. If both the server IP address (or DNS name) and the CPC identifier are specified on the command line, the password is selected in the configuration file using the server IP address (or DNS name). When you use the -x command-line option to get the list of defined CPCs on a server, specify only the server IP address (or DNS name) on the command line.
+
+The following rules apply to the configuration file:
+.IP o 5
+Lines that begin with a number sign (#) are comment lines. A number sign in the middle of a line makes the remaining line a comment.
+.IP o 5
+Empty lines are permitted.
+.IP o 5
+The specifications are not case sensitive.
+.IP o 5
+In a \fI<keyword>=<value>\fR pair, one or more blanks are allowed before or after the equal sign (=).
+.P
+The following list maps the configuration file keywords to command line equivalents:
+.TP
+\fBserver\fR (required, once per section)
+starts a configuration file section by specifying the IP address or DNS name of an SE or HMC. This attribute is equivalent to the \fB--se\fR command-line argument.
+.TP
+\fBuser\fR (optional, once per section)
+specifies the user name from the SNMP settings of the HMC. When omitted, you must specify the user name in the \fBsncap\fR command line arguments. The user
+name is not needed for unencrypted connections.
+.TP
+\fBpassword\fR (optional, once per section)
+specifies the password (community) from the SNMP settings of the SE or HMC. If omitted, you must specify the password in the \fBsncap\fR command\-line arguments. Alternatively, use -P option to prompt the user for the password. This attribute specifies the \fB--password\fR command line argument. When encryption is
+enabled, the password is the SNMPv3 user name password from the SNMPv3
+settings of the SE or HMC.
+.TP
+\fBencryption\fR (optional, once per section)
+specifies whether the server connection is encrypted. Allowed values: yes or
+no. If not specified, encryption is enabled by default.
+.TP
+\fBcpcid\fR (required, at least once per section)
+specifies the Central Processing Complex name that is defined in the hardware. This server attribute is used to map the CPC identifier to the server IP address (DNS name) and password. Note that there can be more than one \fBcpcid\fR entry in a section if the server is an HMC.
+.TP
+\fBtype\fR (optional, at most once per section)
+specifies the server type. This parameter is used to provide compatibility with the \fIsnipl\fR configuration file. If it is specified, it must have the value "\fBLPAR\fR".
+.P
+The other \fIsnipl\fR configuration file keywords are ignored by \fBsncap\fR.
+
+Sample configuration file:
+.br
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.br
+# Comment line (ignored).
+.br
+#
+.br
+# A section that defines a support element connection.
+.br
+#
+.br
+Server = 192.0.2.4
+.br
+type = LPAR
+.br
+cpcid = SZ01CP00
+.br
+encryption = yes
+.br
+user = hugo
+.br
+password = pw42play
+.br
+encryption = yes
+.br
+#
+.br
+# A section which defines a hardware management console
+.br
+# connection.
+.br
+#
+.br
+Server = 192.0.2.2
+.br
+encryption = no
+.br
+type = LPAR
+.br
+cpcid = SZ02CP00
+.br
+cpcid = SZ02CP01
+.br
+cpcid = SZ02CP03
+.br
+cpcid = SZ02CP04
+.br
+password= pw42play
+.br
+<EOF>
+.br
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+
+.SH "RETURN CODES AND CONNECTION ERRORS"
+Successful sncap commands return 0 and write the message "Execution completed successfully" to stderr. If an error occurs, sncap writes a short message to stderr and completes with a return code other than 0.
+
+.IP 1 5
+An unknown command option was specified.
+.IP 2 5
+A command option with an invalid value was specified.
+.IP 3 5
+A command option was specified more than once.
+.IP 4 5
+Conflicting command options were specified.
+.IP 5 5
+No command option was specified.
+.IP 6 5
+No request server was specified on the command line, nor in a configuration file.
+.IP 7 5
+Temporary capacity record <RECID> is not installed on CPC <CPCID>.
+.IP 8 5
+Server version is not supported.
+.IP 9 5
+No password was specified on the command line, nor through a
+configuration file.
+.IP 10 5
+The specified CPC does not exist.
+.IP 11 5
+Insufficient hardware resources to complete the request.
+.IP 12 5
+The timeout occurred, the command is cancelled.
+.IP 13 5
+An invalid password was specified.
+.IP 14 5
+An invalid model capacity identifier was specified.
+.IP 15 5
+No operation option was specified.
+.IP 16 5
+Invalid server IP address or DNS name was specified.
+.IP 17 5
+Too many processors were specified for the operation. No processors were activated.
+.IP 18 5
+An error was received from HWMCAAPI API.
+.IP 19 5
+Missing mandatory argument.
+.IP 20 5
+An error occurred when processing the configuration file.
+.IP 21 5
+One of the specified processor types is not defined in the temporary capacity record.
+.IP 22 5
+Cannot deactivate the inactive temporary capacity record.
+.IP 23 5
+The number of activations was exhausted.
+.IP 24 5
+No user name was specified in the command line or configuration file. User name
+is required when encryption is selected.
+.IP 25 5
+User name must not be specified when encryption is disabled.
+.IP 26 5
+The wrong encryption value was specified in the configuration file.
+Use "yes" or "no".
+
+.P
+The following return codes indicate setup errors or program errors:
+.IP 50 5
+A response from the SE or HMC could not be interpreted.
+.IP 90 5
+A storage allocation failure occurred.
+.IP 99 5
+A program error occurred.
+
+.P
+If a connection error occurs (such as a timeout), sncap sends a message to stderr.
+
+To recover connection errors, try to issue the command again. If the problem persists, a networking failure is most likely. In this case, increase the timeout value. When sncap receives an error code from SE or HMC, it returns application return code 18.
+
+Error messages from the SE have this format:
+
+\fI<server address>\fR: \fI<message>\fR - rc is \fI<rc>\fR
+
+where \fI<rc>\fR is a return code from the HWMCAAPI on the SE or HMC.
+
+Example:
+192.168.1.15: not acknowledged - command was not successful - rc is 135921664.
+
+To interpret these return codes, see \fISystem z Application Programming Interfaces\fR, SB10-7030. You can obtain this publication from IBM Resource Link at www.ibm.com/servers/resourcelink.
+
+.SH "NOTES"
+
+When a temporary capacity record activation or deactivation command cancels due to a timeout (indicated by return code 12 - "Timeout occurred, the command is canceled") or 18 - "An error was received from the HWMCAAPI API" with the short message about the timeout occurred, the requested operation can still continue to run on the CPC support element and potentially complete successfully. Use \-q / \-\-query to investigate the record's state before issuing the next command for that CPC.
+
+\fBsncap\fR command processes cannot be run in parallel for the same CPC for temporary capacity record activation or deactivation. Also, a \fBsncap\fR process that is started for a temporary capacity record activation or deactivation cannot run in parallel with a \fBsnipl\fR process for the same CPC.
+
+.SH "EXAMPLES"
+
+To activate a CBU temporary capacity record CB7KHB38 on CPC SZ02CP03 to temporarily upgrade it to model capacity identifier 741:
+.br
+sncap SZ02CP03 -S 192.0.2.2 -e -P -a CB7KHB38 -m 741
+
+To activate only a subset of processors defined in temporary capacity record CB7KHB38 on the CPC SZ02CP03:
+.br
+sncap SZ02CP03 -S 192.0.2.2 -e -P -a CB7KHB38 --zaap 2 --ziip 2
+
+To deactivate a CBU temporary capacity record CB7KHB38 on the CPC SZ01CP00:
+.br
+sncap SZ01CP00 -S 192.0.2.4 -u hugo -P -d CB7KHB38
+
+To deactivate only a subset of processors defined in temporary capacity record CB7KHB38 on the CPC SZ01CP00:
+.br
+sncap SZ01CP00 -S 192.0.2.4 -u hugo -P -d CB7KHB38 --zaap 2 --ziip 2
+
+With a suitable configuration file at /etc/xcfg the previous command can be shortened to:
+.br
+sncap SZ01CP00 -f /etc/xcfg -d CB7KHB38 --zaap 2 --ziip 2
+
+With a suitable default configuration file the command can be further shortened to:
+.br
+sncap SZ01CP00 -d CB7KHB38 --zaap 2 --ziip 2
+
+.SH "AUTHOR"
+.nf
+Copyright IBM Corp. 2012, 2013
+
+Published under the terms and conditions of the CPL
+(Common Public License).
+.fi
+
+.SH "SEE ALSO"
+\fIDevice Drivers, Features and Commands\fR, SC33-8411.
+
+For information about the management APIs of the Support Element and
+the Hardware Management Console, see
+\fISystem z Application Programming Interfaces\fR, which is available
+at IBM Resource Link (http://www.ibm.com/servers/resourcelink).
+
+For information about the \fBsncap\fR report fields and sample  workflows for the temporary capacity record installation, activation and deactivation, see the Redbooks publication "IBM Capacity on Demand" and the "Capacity on Demand User's  Guide" for your IBM Z model.
+

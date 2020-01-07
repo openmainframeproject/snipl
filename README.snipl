@@ -1,0 +1,285 @@
+snipl (3.1.0)
+
+The snipl (simple network IPL) package consists of three main parts, each of
+which serve as remote control of IBM Z hardware:
+   - snipl   : a command line program.
+   - lic_vps : a heartbeat-stonith plug-in that is called by stonith.
+   - sncap   : a command line program.
+
+snipl can run in two modes: LPAR and z/VM mode.
+
+In LPAR mode, snipl provides basic IBM Z support element (SE) functions
+for LPARs. You can:
+ - Activate, reset, or deactivate an LPAR.
+ - Load (IPL) an LPAR from a disk device, for example, a DASD device or a
+   SCSI device.
+ - Create a dump on a DASD or SCSI dump device.
+ - Send commands to the operating system and retrieve operating system
+   messages.
+ - Retrieve the status of an LPAR
+snipl in LPAR mode uses the management application programming interfaces
+(APIs) of the SE or HMC that controls the LPAR. To use this API, snipl requires
+the hwmcaapi library. See "System z Application Programming Interfaces",
+SB10-7030 for details about the hwmcaapi and about configuring LPARs
+for remote access. You can obtain this publication and the hwmcaapi library
+from http://www.ibm.com/server/resourcelink, at IBM Systems > IBM Z > Resource
+Link > Services > IBM Z APIs > Linux-390.
+
+In z/VM mode, snipl provides basic z/VM systems management functions for
+z/VM guests. You can:
+ - Log on, reset, or log off a z/VM guest virtual machine
+ - Retrieve the status of a z/VM guest virtual machine
+snipl in z/VM mode uses the systems management application programming
+interfaces (APIs) of z/VM. How snipl communicates with the API on the z/VM
+system depends on your z/VM system version and on your system setup.
+As of z/VM 5.3, you can access the API through a SMAPI request server.
+For details about setting up your z/VM system for API access see
+"z/VM Systems Management Application Programming", SC24-6234.
+For z/VM 4.4 to z/VM 5.4, you can access the API through the VSMSERVE service
+machine. For details see about setting up your z/VM system see
+"z/VM Systems Management Application Programming", SC24-6122-02 or earlier.
+You can obtain these publications from the z/VM website at
+http://www.vm.ibm.com
+
+For the RPC-based VSMSERVE server clients contact the server remotely using the
+RPC primitives built on top of an eXternal Data Representation (XDR). The RPC
+protocol specification provided is registered and can be found in the file
+DMSVSMA.X, which can be downloaded from z/VM and stored as dmsvsma.x
+(usually into /usr/share/dmsvsma/) on the Linux system where snipl is to
+be built.
+Note that this functionality is deprecated as of snIPL 3.1.0, not compiled per
+default. To compile with DMSVSMA support, run 'make WITHVMOLD=1'. However, this
+option might be removed in a future snIPL release, and there is no guarantee
+that the DMSVSMA support will stay functional.
+
+lic_vps (Linux Image Control - Virtual Power Switch) is a plug-in for STONITH
+(Shoot The Other Node In The Head) version 2.0.0 and later.
+STONITH is part of the Linux heartbeat framework of the Linux
+High-Availability project (http://linux-ha.org). STONITH provides an extensible
+interface for remotely powering down and restarting nodes in a cluster.
+http://linux-ha.org/wiki/STONITH gives a general description of the STONITH
+technique. The latest STONITH release is available at
+http://linux-ha.org/wiki/Downloads
+
+See "Device Drivers, Features, and Commands", SC33-8411 about how to pass
+snipl plug-in options to STONITH.
+
+sncap (Simple Network Capacity Management) is a command line tool which allows
+to control the dynamic CPU capacity of a CPC from the Linux environment. It
+provides to the Linux users the following SE dynamic CPU capacity control
+functions:
+ - Activate or deactivate an installed temporary capacity record.
+ - Change a temporary capacity record activation level.
+ - Query information about the CPCs controlled by an SE or HMC.
+ - Query information about the temporary capacity records installed on the
+   CPC SE.
+ - Query information about current temporary capacity record state.
+sncap uses the management application programming interfaces (APIs) of the SE 
+or HMC that controls the CPC. To use this API, sncap requires the hwmcaapi 
+library. See "System z Application Programming Interfaces", SB10-7030 for 
+details about the hwmcaapi and about configuring CPCs for remote access. You 
+can obtain this publication and the hwmcaapi library from 
+http://www.ibm.com/server/resourcelink, at IBM Systems > IBM Z > Resource
+Link > Services > IBM Z APIs > Linux-390.
+
+Release History:
+================
+3.1.0
+    Changes:
+    - snipl: Introduce return code 100 to indicate SMAPI connection errors
+    - snipl: DMSVSMA deprecated
+    Bug Fixes:
+    - Fix error when compiling with openSSL 1.1
+
+3.0.0
+    Notes:
+    - Default behavior and command line parameters have changed. The default
+      is now to encrypt the connection. Also, the default password has been
+      removed. See changes below, consult the man page, and check that existing
+      scripts still work as expected.
+    Changes:
+    - Remove default password from snipl
+    - Enable SNMPv3 encrypted communication with HMC/SE
+    - Enable OpenSSL encrypted communication with SMAPI servers
+    Bug Fixes:
+    - Improve error and command line parameter handling
+    - Improve support for the x86_64 platform
+    - Add support for SCSI IPL with SSID 1, 2, and 3
+    - Various return-code fixes
+
+2.3.3
+    Changes:
+    - Add IPv6 support to snipl applications
+    Bug Fixes:
+    - fix vm6_wait_for_response return code is not returned on error
+    - improve Makefile to allow package builds on x86_64 platform
+    - fix segmentation fault when VM server is defined incompletely
+
+2.3.2
+    Changes:
+    - Allow to IPL from CCW devices in subchannel set not equal to zero
+    Bug Fixes:
+    - Endianness conversion for the SMAPI API fixed
+
+2.3.1
+    Changes:
+    - rename config.c into snconfig.c and libconfig.so into libsnconfig.so
+      to avoid name clash with other package
+    - Makefile adaptions for gcc-4.8
+    - adapt lic_vps.c to libglue-devel-1.0.12
+
+2.3.0
+    Changes:
+    - add the sncap program
+
+2.2.1
+    Bug Fixes:
+    - snipl --scsiload: correct checking of bps_scsiload
+    - snipl --getstatus: correct return code checking
+    - config file: correct server configs without userid
+
+2.2.0
+    Changes:
+    - provide access to SMAPI request server
+    - add option "--getstatus"
+
+2.1.9
+    Changes:
+    - add option "--scsidump"
+    - add option "--stop"
+
+2.1.8
+    Bug Fixes:
+    - snipl --dialog: avoid protocol errors
+
+2.1.7
+    Bug Fixes:
+    - snipl --deactivate: tolerate events other than 'command completion'
+
+2.1.6
+    Bug Fixes:
+    - snipl --dialog: add newlines to make sure all console messages show up
+    - adaptions to hwmcaapi-2.10.1.76
+
+2.1.5
+    Bug Fixes:
+    - stonith plugin: no error if fencing is invoked for a system being deactivated
+
+2.1.4
+    Bug Fixes:
+    - correct config file password propagation
+    - snipl --dialog: correct newline handling for sending commands
+    - stonith plugin: allowing different image servers in config file
+
+2.1.3
+    Changes:
+    -stonith plugin: upgrade to version 2
+    - add option "--scsiload"
+    - snipl --dialog: add option --msgfilename
+    - config file: add aliasing
+    - snipl LPAR: increase default --timeout from 10s to 60s
+
+2.1.2
+    Bug Fixes:
+    - snipl LPAR: enforce tcp_port 3161
+
+Parts:
+======
+The snipl package includes the following files:
+
+Makefile                snipl, lic_vps and sncap Makefile
+snipl.h                 snipl source code (LPAR mode)
+vmsmapi.h               snipl source code (z/VM mode using the VSMSERVE service machine)
+vmsmapi6.h              snipl source code (z/VM mode using a SMAPI request server)
+stonith_config_xml.h    copy of generic xml definitions for stonith plugins *
+snipl_stonith_plugin.h  copy of some stonith_plugin.h definitions *
+snconfig.c              snipl configuration file handling stuff
+lic_vps.c               STONITH plugin
+prepare.c               type depending module load
+snipl.c                 snipl source code
+sniplapi.c              snipl source code (LPAR mode)
+vmsmapi.c               snipl source code (z/VM mode using the VSMSERVE service machine)
+vmsmapi6.c              snipl source code (z/VM mode using a SMAPI request server)
+snipl.8                 snipl man page
+LICENSE                 Common Public License Version 1.0
+README.snipl            this README
+sncap.c                 sncap source code
+sncap.h                 sncap source code (header file)
+sncapapi.c              sncap HWMCAAPI API interface
+sncapapi.h              sncap HWMCAAPI API interface (header file)
+sncapconf.c             sncap snipl configuration file interface
+sncapconf.h             sncap snipl configuration file interface (header file)
+sncapcpc.c              sncap CPC object handling 
+sncapcpc.h              sncap CPC object handling (header file)
+sncapdsm.c              sncap temporary capacity record XML definition 
+                        interface
+sncapdsm.h              sncap temporary capacity record XML definition 
+                        interface (header file)
+sncapjob.c              sncap command line argument handling
+sncapjob.h              sncap command line argument handling (header file)
+sncaptcr.c              sncap temporary capacity record handling
+sncaptcr.h              sncap temporary capacity record handling (header file)
+sncaputil.c             sncap common utility functions
+sncaputil.h             sncap common utility functions (header file)
+sncap.8                 sncap man page
+
+
+(* this copy is needed because lic_vps must be built outside of the stonith
+build-tree)
+
+For more information see the snipl, sncap and stonith man pages and
+"Device Drivers, Features and Commands", SC33-8411.
+
+Requirements:
+=============
+- To compile and run snipl for LPARs running Linux on IBM Z,
+  the hwmcaapi library is required.
+  Usually libhwmcaapi.so is expected in /usr/lib/ or /usr/lib64/.
+- To communicate with the SE or HMC, the snipl programs require udp-port 161
+  and tcp-port 3161. These ports must not be blocked by a firewall.
+- To compile and run snipl for z/VM guest virtual machines, managed with the
+  SMAPI request server, the request server environment has to be installed and
+  configured by a z/VM administrator.
+- To compile and run snipl for z/VM guests, managed with an RPC-based VSMSERVE
+  service machine, the RPC protocol specification DMSVSMA.X has to be downloaded
+  to the Linux system running snipl (usually into /usr/share/dmsvsma/).
+  The VSMSERVE service machine must be installed and configured (including its
+  TCP/IP- and RACF-definitions). Images controlled by snipl have to be defined
+  in the authlist of VSMSERVE.
+  Furthermore, snIPL has to be compiled with WITHVMOLD=1 (see respective
+  section above), as the DMSVSMA functionality in snipl is considered
+  deprecated.
+- To compile and use the STONITH plug-in lic_vps, package Cluster Glue
+  has to be downloaded from http://linux-ha.org/wiki/Downloads and installed.
+  STONITH requires the installation of the heartbeat packages heartbeat-pils and
+  heartbeat-stonith created from the Cluster Glue tarball.
+  When invoking stonith, make sure:
+    - libstonith.so, libpils.so, and libglib-2.0 are available within your
+      active library path.
+    - lic_vps.a, lic_vps.la, and lic_vps.so are available in your stonith
+      plug-in directory
+      (usually /usr/lib64/stonith/plugins/stonith2/ )
+- To compile and run sncap the hwmcaapi library is required. sncap has been
+  tested with the SE and HMC hwmcaapi library 2.10.2 in System z10, and z196.
+- Using of sncap requires the SE or HMC software version 2.10.0 or later.
+
+Restrictions:
+- snipl package programs do not recover connection failures or management API 
+  error messages. In case of, for example, a timeout, snipl package programs 
+  display the error code (see "System z Application Programming Interfaces", 
+  SB10-7030) along with a short message. Verify that the SE or HMC is reachable
+  via the network and that the SE or HMC is configured properly.
+- snipl in LPAR mode acknowledges when a load command has been accepted
+  by the management API on the SE. However you must check, whether
+  the load command has completed successfully. For example, snipl cannot
+  determine if an incorrect load address has been used as input.
+- sncap command processes cannot be executed in parallel for the same CPC for
+  temporary capacity record activation or deactivation. Also, sncap process 
+  started for a temporary capacity record activation or deactivation cannot
+  run in parallel with a snipl process being executed for the same CPC.
+
+Copyright IBM Corp. 2001, 2016
+
+THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THE ENCLOSED COMMON
+PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE
+PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
